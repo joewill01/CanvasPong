@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+
+    html, body {
+        padding: 0;
+        margin: 0;
+    }
+    
+    canvas {
+        background-color: #000;
+        height: 99vh;
+        width: 100vw;
+    }
+</style>
+</head>
+<body onload="startGame()">
+<script>
+
+var player1;
+var player2;
+var ball1;
+
+function startGame() {
+    player1 = new Sprite(10, 100, "white", 20, 20, 10);
+    player2 = new Sprite(10, 100, "white", 970, 20, 10);
+    ball1 = new Sprite(5, 5, "white", 500, 50, 5);
+    ball1.speedY = 0;
+    ball1.speedX = -5;
+    myGameArea.start();
+}
+
+var myGameArea = {
+    canvas : document.createElement("canvas"),
+    start : function() {
+        this.canvas.width = 1000;
+        this.canvas.height = 700;
+        this.context = this.canvas.getContext("2d");
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+        this.interval = setInterval(updateGameArea, 20);
+    },
+    clear : function() {
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+};
+
+class Sprite {
+    constructor (width, height, color, x, y, maxspeed) {
+        this.width = width;
+        this.height = height;
+        this.color = color;
+        this.x = x;
+        this.y = y;
+        this.speedX = 0;
+        this.speedY = 0;
+        this.maxspeed = maxspeed;
+        this.accelerationX = 0;
+        this.accelerationY = 0;
+    }
+
+    move() {
+        this.speedX = this.speedX + this.accelerationX;
+        this.speedY = this.speedY + this.accelerationY;
+        this.x = this.x + this.speedX;
+        this.y = this.y + this.speedY;
+    };
+
+    update() {
+        this.move();
+
+        let ctx = myGameArea.context;
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+    }
+}
+
+window.addEventListener('keydown',keyDownHandler,false);
+
+function keyDownHandler(e) {
+    if (e.keyCode === 87) {
+        player1.speedY = -player1.maxspeed;
+    } if (e.keyCode === 83) {
+        player1.speedY = player1.maxspeed;
+    } if (e.keyCode === 38) {
+        player2.speedY = -player2.maxspeed;
+    } if (e.keyCode === 40) {
+        player2.speedY = player2.maxspeed;
+    }
+}
+
+window.addEventListener('keyup',keyUpHandler,false);
+
+function keyUpHandler(e) {
+    if (e.keyCode === 87) {
+        player1.speedY = 0;
+    } if (e.keyCode === 83) {
+        player1.speedY = 0;
+    } if (e.keyCode === 38) {
+        player2.speedY = 0;
+    } if (e.keyCode === 40) {
+        player2.speedY = 0;
+    }
+}
+
+function collisionDetection() {
+    if (player1.x+player1.width >= ball1.x && player1.y < ball1.y+ball1.height/2 && player1.y+player1.height > ball1.y+ball1.height/2) {
+        ball1.speedX = -ball1.speedX;
+        ball1.speedY = (((0-(player1.y-ball1.y))-(player1.height/2))/(player1.height/2)) * 10
+    }
+    if (player2.x <= ball1.x + ball1.width && player2.y < ball1.y+ball1.height/2 && player2.y+player2.height > ball1.y+ball1.height/2) {
+        ball1.speedX = -ball1.speedX;
+        ball1.speedY = (((0-(player2.y-ball1.y))-(player2.height/2))/(player2.height/2)) * 10
+    }
+    if (ball1.y >= myGameArea.canvas.height || ball1.y <= 0) {
+        ball1.speedY = -ball1.speedY;
+    }
+}
+
+function updateGameArea() {
+    myGameArea.clear();
+    collisionDetection();
+    player1.update();
+    player2.update();
+    ball1.update();
+}
+</script>
+</body>
+</html>
