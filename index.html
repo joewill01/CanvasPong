@@ -8,27 +8,49 @@
         padding: 0;
         margin: 0;
     }
-    
+
     canvas {
         background-color: #000;
         height: 99vh;
         width: 100vw;
     }
+
+    #p1_score {
+        position: fixed;
+        top: 10px;
+        left: calc(50vw - 300px);
+        color: white;
+        z-index: 99;
+        font-size: 100px;
+    }
+
+    #p2_score {
+        position: fixed;
+        top: 10px;
+        right: calc(50vw - 300px);
+        color: white;
+        z-index: 99;
+        font-size: 100px;
+    }
 </style>
 </head>
 <body onload="startGame()">
+<h1 id="p1_score"></h1>
+<h1 id="p2_score"></h1>
 <script>
 
 var player1;
 var player2;
 var ball1;
+var net;
+var p1score = 0;
+var p2score = 0;
 
 function startGame() {
-    player1 = new Sprite(10, 100, "white", 20, 20, 10);
-    player2 = new Sprite(10, 100, "white", 970, 20, 10);
-    ball1 = new Sprite(5, 5, "white", 500, 50, 5);
-    ball1.speedY = 0;
-    ball1.speedX = -5;
+    player1 = new Sprite(10, 100, "white", 20, 300, 10, true);
+    player2 = new Sprite(10, 100, "white", 970, 300, 10, true);
+    ball1 = new Sprite(6, 6, "white", 497, 350, 7, false);
+    net = new Sprite(4, 1000, "white",498, 0, 0, false);
     myGameArea.start();
 }
 
@@ -47,15 +69,27 @@ var myGameArea = {
 };
 
 class Sprite {
-    constructor (width, height, color, x, y, maxspeed) {
+    constructor (width, height, color, x, y, maxspeed, heightLimit) {
         this.width = width;
         this.height = height;
         this.color = color;
+        this.start_x = x;
+        this.start_y = y;
         this.x = x;
         this.y = y;
         this.speedX = 0;
         this.speedY = 0;
         this.maxspeed = maxspeed;
+        this.accelerationX = 0;
+        this.accelerationY = 0;
+        this.heightLimit = heightLimit;
+    }
+
+    reset() {
+        this.x = this.start_x;
+        this.y = this.start_y;
+        this.speedX = 0;
+        this.speedY = 0;
         this.accelerationX = 0;
         this.accelerationY = 0;
     }
@@ -64,7 +98,16 @@ class Sprite {
         this.speedX = this.speedX + this.accelerationX;
         this.speedY = this.speedY + this.accelerationY;
         this.x = this.x + this.speedX;
-        this.y = this.y + this.speedY;
+        if (this.heightLimit) {
+            if (this.y >= 10 && this.speedY < 0) {
+                this.y = this.y + this.speedY;
+            }
+            if (this.y <= myGameArea.canvas.height-this.height-10 && this.speedY > 0) {
+                this.y = this.y + this.speedY;
+            }
+        } else {
+            this.y = this.y + this.speedY;
+        }
     };
 
     update() {
@@ -81,12 +124,28 @@ window.addEventListener('keydown',keyDownHandler,false);
 function keyDownHandler(e) {
     if (e.keyCode === 87) {
         player1.speedY = -player1.maxspeed;
+        if (ball1.speedX === 0 && ball1.speedY === 0) {
+            ball1.speedX = -ball1.maxspeed;
+            ball1.speedY = -ball1.maxspeed;
+        }
     } if (e.keyCode === 83) {
         player1.speedY = player1.maxspeed;
+        if (ball1.speedX === 0 && ball1.speedY === 0) {
+            ball1.speedX = -ball1.maxspeed;
+            ball1.speedY = ball1.maxspeed;
+        }
     } if (e.keyCode === 38) {
         player2.speedY = -player2.maxspeed;
+        if (ball1.speedX === 0 && ball1.speedY === 0) {
+            ball1.speedX = ball1.maxspeed;
+            ball1.speedY = -ball1.maxspeed;
+        }
     } if (e.keyCode === 40) {
         player2.speedY = player2.maxspeed;
+        if (ball1.speedX === 0 && ball1.speedY === 0) {
+            ball1.speedX = ball1.maxspeed;
+            ball1.speedY = ball1.maxspeed;
+        }
     }
 }
 
@@ -107,15 +166,28 @@ function keyUpHandler(e) {
 function collisionDetection() {
     if (player1.x+player1.width >= ball1.x && player1.y < ball1.y+ball1.height/2 && player1.y+player1.height > ball1.y+ball1.height/2) {
         ball1.speedX = -ball1.speedX;
-        ball1.speedY = (((0-(player1.y-ball1.y))-(player1.height/2))/(player1.height/2)) * 10
+        ball1.speedY = -(((0-(player1.y-ball1.y))-(player1.height/2))/(player1.height/2)) * ball1.maxspeed
     }
     if (player2.x <= ball1.x + ball1.width && player2.y < ball1.y+ball1.height/2 && player2.y+player2.height > ball1.y+ball1.height/2) {
         ball1.speedX = -ball1.speedX;
-        ball1.speedY = (((0-(player2.y-ball1.y))-(player2.height/2))/(player2.height/2)) * 10
+        ball1.speedY = -(((0-(player2.y-ball1.y))-(player2.height/2))/(player2.height/2)) * ball1.maxspeed
     }
     if (ball1.y >= myGameArea.canvas.height || ball1.y <= 0) {
         ball1.speedY = -ball1.speedY;
     }
+    if (ball1.x <= 0) {
+        p2score++;
+        ball1.reset()
+    }
+    if (ball1.x+ball1.height>=myGameArea.canvas.width) {
+        p1score++;
+        ball1.reset()
+    }
+}
+
+function updateScores() {
+    document.getElementById("p1_score").innerText = p1score.toString();
+    document.getElementById("p2_score").innerText = p2score.toString();
 }
 
 function updateGameArea() {
@@ -124,6 +196,8 @@ function updateGameArea() {
     player1.update();
     player2.update();
     ball1.update();
+    net.update();
+    updateScores()
 }
 </script>
 </body>
